@@ -1,3 +1,4 @@
+//Reading the plan(level)
 class Level {
   constructor(plan) {
     let rows = plan.trim().split("\n").map( l => [...l]);
@@ -16,3 +17,21 @@ class Level {
     });
   }
 }
+
+//Reading the state of the game
+class State {
+  constructor(levels , actors, status) {
+    this.levels = levels;
+    this.actors = actors;
+    this.status = status;
+  }
+
+  static start(level) {
+    return new State(level, level.actors, "playing");
+  }
+
+  get player() {
+    return this.actors.find( a => a.type === 'player');
+  }
+}
+
