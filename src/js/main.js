@@ -254,3 +254,23 @@ State.prototype.update = function(time, keys) {
   }
   return newState;
 }
+
+// function that checks two objects collide or not 
+function overlap(actor1, actor2) {
+  return actor1.pos.x + actor1.size.x > actor2.pos.x &&
+         actor1.pos.x < actor2.pos.x + actor2.size.x &&
+         actor1.pos.y + actor1.size.y > actor2.pos.y &&
+         actor1.pos.y < actor2.pos.y + actor2.size.y;
+}
+
+// If two object overlap then collide method update the state of the game
+Lava.prototype.collide = function(state) {
+  return new State(state,level, state.actors, "lost");
+};
+
+Coin.prototype.collide = function(state) {
+  let filtered = state.actors.filter(a => a != this);
+  let status = state.status;
+  if(!filtered.some(a => a.type === "coin")) status = "won";
+  return new State(state.level, filtered, status);
+};
