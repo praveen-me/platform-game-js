@@ -153,7 +153,7 @@ class DOMDisplay {
 
 const scale = 20;
 
-//functionto draw a level
+//function to draw a level
 function drawGrid(level) {
   return elt("table", {
     class : "background",
@@ -164,3 +164,26 @@ function drawGrid(level) {
     }));
   }));
 }
+
+// function for drawActor 
+function drawActor(actors) {
+  return elt("div", {}, ...actors.map(actor => {
+    let rect = elt("div", {class : `actor ${actor.type}`});
+    rect.style.width = `${actor.size.x * scale}px`;
+    rect.style.height = `${actor.size.y * scale}px`;
+    rect.style.left = `${actor.pos.x * scale}px`;
+    rect.style.top = `${actor.pos.y * scale}px`;
+  }));
+}
+
+// add a method to DomDisplay to sync with the state of the game
+DOMDisplay.prototype.syncState = function(state) {
+  if(this.actorLayer) {
+    this.actorLayer.remove();
+  }
+  this.actorLayer = drawActor(state.actors);
+  this.dom.appendChild(this.actorLayer);
+  this.dom.className = `game ${state.status}`;
+  this.scrollPlayerIntoView(state);
+}
+
