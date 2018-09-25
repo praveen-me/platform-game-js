@@ -22,7 +22,7 @@ class Level {
         let type = levelChars[ch];
         if(typeof type === 'string') return type;
         this.startActors.push(
-          type.create(new Vector(x,y), ch));
+          type.create(new Vec(x,y), ch));
         return "empty";       
       });
     });
@@ -38,7 +38,7 @@ class State {
   }
 
   static start(level) {
-    return new State(level, level.actors, "playing");
+    return new State(level, level.startActors, "playing");
   }
 
   get player() {
@@ -119,7 +119,7 @@ class Coin {
 
   static create(pos) {
     let basePos = pos.plus(new Vec(0.2, 0.1));
-    return new Coin(basePos, basePos, Math.random() * Math.PI() * 2);
+    return new Coin(basePos, basePos, Math.random() * Math.PI * 2);
   }
 }
 
@@ -140,10 +140,10 @@ const levelChars = {
 // helper function to create an element.
 function elt(name, attrs, ...children) {
   let dom = document.createElement(name);
-  for(let attr of Object.keys(attrs)) {
-    dom.setAttribute(attrs, attrs[attr]);
+  for (let attr of Object.keys(attrs)) {
+    dom.setAttribute(attr, attrs[attr]);
   }
-  for(let child of children) {
+  for (let child of children) {
     dom.appendChild(child);
   }
   return dom;
@@ -152,51 +152,46 @@ function elt(name, attrs, ...children) {
 // class for create level to it's parent element
 class DOMDisplay {
   constructor(parent, level) {
-    this.dom = elt("div", {class : "game"}, drawGrid(level));
+    this.dom = elt("div", {class: "game"}, drawGrid(level));
     this.actorLayer = null;
-    parent.appendChild(level);
+    parent.appendChild(this.dom);
   }
 
-  clear() {
-    this.dom.remove();
-  }
+  clear() { this.dom.remove(); }
 }
-
 const scale = 20;
 
 //function to draw a level
 function drawGrid(level) {
   return elt("table", {
-    class : "background",
-    style : `width : ${level.width * scale}px`
-  }, ...levels.rows.map(row => {
-    elt("tr", {style : `height : ${scale}px`}, ...row.map(type => {
-      elt("td", {class : type});
-    }));
-  }));
+    class: "background",
+    style: `width: ${level.width * scale}px`
+  }, ...level.rows.map(row =>
+    elt("tr", {style: `height: ${scale}px`},
+        ...row.map(type => elt("td", {class: type})))
+  ));
 }
-
 // function for drawActor 
-function drawActor(actors) {
+
+function drawActors(actors) {
   return elt("div", {}, ...actors.map(actor => {
-    let rect = elt("div", {class : `actor ${actor.type}`});
+    let rect = elt("div", {class: `actor ${actor.type}`});
     rect.style.width = `${actor.size.x * scale}px`;
     rect.style.height = `${actor.size.y * scale}px`;
-    rect.style.left = `${actor.pos.x * scale}px`;
+    rect.style.left = ` ${actor.pos.x * scale}px`;
     rect.style.top = `${actor.pos.y * scale}px`;
+    return rect;
   }));
 }
 
 // add a method to DomDisplay to sync with the state of the game
 DOMDisplay.prototype.syncState = function(state) {
-  if(this.actorLayer) {
-    this.actorLayer.remove();
-  }
-  this.actorLayer = drawActor(state.actors);
+  if (this.actorLayer) this.actorLayer.remove();
+  this.actorLayer = drawActors(state.actors);
   this.dom.appendChild(this.actorLayer);
   this.dom.className = `game ${state.status}`;
   this.scrollPlayerIntoView(state);
-}
+};
 
 // method on DOMDisplay to make player in the view
 DOMDisplay.prototype.scrollPlayerIntoView = function (state) {
@@ -222,3 +217,40 @@ DOMDisplay.prototype.scrollPlayerIntoView = function (state) {
     this.dom.scrollTop = center.y + margin + height;
   }
 };
+
+// method to check wheater players touches the wall or not
+Level.prototype.touches = function(pos, size, type) {
+  var xStart = Math.floor(pos.x);
+  var xEnd = Math.ceil(pos.x + size.x);
+  var yStart = Math.floor(pos.y);
+  var yEnd = Math.ceil(pos.y + size.y);
+
+  for(var y = yStart; y < yEnd; y++) {
+    for(var x = xStart; x < xEnd; x++) {
+      let isOutSide = x < 0 || x >= this.width || y < 0 || y >= this.height;
+      let here = isOutSide ? "wall" : this.rows[x][y];
+      if(here === type) return true; 
+    }
+  }
+  return false;
+}
+
+// methods uses toches methods to checks wheather player collide with lava
+State.prototype.update = function(time, keys) {
+  let actors = this.actors.map(actor => actor.update(time, this, keys));
+  let newState = new State(this.level, actor, this.status);
+
+  if(newState.status != "playing") return newState;
+
+  let player = newState.player;
+  if(this.level.touches(player.pos, player.size, "lava")) {
+    return new State(this.level, actors, "lost");
+  }
+
+  for(let actor of actors ) {
+    if(actor != player && overlap(actor, player)) {
+      newState = actor.collide(newState);
+    }
+  }
+  return newState;
+}
