@@ -113,3 +113,54 @@ class Coin {
 }
 
 Coin.prototype.size = new Vec(0.6, 0.6);
+
+//object that defines the characters which are as grid bacground and which are members of actor group
+const levelChars = {
+  "." : "empty", 
+  "#" : "wall", 
+  "+" : "lava",
+  "@" : Player, 
+  "o" : Coin, 
+  "|" : Lava,
+  "=" : Lava,
+  "v" : Lava
+};
+
+// helper function to create an element.
+function elt(name, attrs, ...children) {
+  let dom = document.createElement(name);
+  for(let attr of Object.keys(attrs)) {
+    dom.setAttribute(attrs, attrs[attr]);
+  }
+  for(let child of children) {
+    dom.appendChild(child);
+  }
+  return dom;
+}
+
+// class for create level to it's parent element
+class DOMDisplay {
+  constructor(parent, level) {
+    this.dom = elt("div", {class : "game"}, drawGrid(level));
+    this.actorLayer = null;
+    parent.appendChild(level);
+  }
+
+  clear() {
+    this.dom.remove();
+  }
+}
+
+const scale = 20;
+
+//functionto draw a level
+function drawGrid(level) {
+  return elt("table", {
+    class : "background",
+    style : `width : ${level.width * scale}px`
+  }, ...levels.rows.map(row => {
+    elt("tr", {style : `height : ${scale}px`}, ...row.map(type => {
+      elt("td", {class : type});
+    }));
+  }));
+}
