@@ -13,9 +13,7 @@
   <script src="./src/js/levels.js"></script>
   <script src="./src/js/main.js"></script>
   <script>
-    let simpleLevel = new Level(simpleLevelPlan);
-    let display = new DOMDisplay(document.body, simpleLevel);
-    display.syncState(State.start(simpleLevel));
+    runGame(GAME_LEVELS, DOMDisplay);
   </script>
 </body>
 </html>
